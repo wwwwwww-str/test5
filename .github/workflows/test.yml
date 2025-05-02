@@ -1,0 +1,50 @@
+name: Vue Paper Dashboard CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      NODE_VERSION: 18
+      WORKDIR: ./
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies with legacy-peer-deps
+        working-directory: ${{ env.WORKDIR }}
+        run: npm install --legacy-peer-deps
+
+      - name: Run npm audit
+        working-directory: ${{ env.WORKDIR }}
+        run: npm audit --fix || true
+
+      - name: Build project
+        working-directory: ${{ env.WORKDIR }}
+        run: npm run build
+
+      - name: Run project
+        working-directory: ${{ env.WORKDIR }}
+        run: npm run dev &
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: ${{ env.WORKDIR }}/dist/**
